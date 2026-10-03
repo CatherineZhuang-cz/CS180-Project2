@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fun with Filters and Frequencies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1c1b1a;
+    --gray-700:#5a5652;
+    --gray-400:#948e88;
+    --gray-200:#e2ddd8;
+    --desktop-bg:#c9c7c3;
+    --page-bg:#efeeeb;
+    --footer-bg:#8a847b;
+    --footer-text:#ffffff;
+    --footer-text-dim:#ddd7cf;
+    --paper:#ffffff;
+    --accent:#b5533c;
+    --accent-soft:#f2e2dc;
+    --maxw:1100px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--desktop-bg);
+    color:var(--ink);
+    font-family:'Inter',Arial,"Segoe UI",sans-serif;
+    font-size:16px;
+    line-height:1.7;
+    padding:32px 20px;
+  }
+
+  /* outermost layer = desktop gray (body); this frame = the lighter
+     "page" gray layer; white .card sections float on top of it */
+  .site-frame{
+    max-width:1200px;
+    margin:0 auto;
+    background:var(--page-bg);
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 24px 48px rgba(20,18,16,.18);
+  }
+  h1,h2{
+    font-family:'Cormorant Garamond',Georgia,serif;
+    font-weight:600;
+    margin:0 0 .45em 0;
+    line-height:1.2;
+  }
+  h3{
+    font-family:'Inter',Arial,sans-serif;
+    font-weight:600;
+    margin:0 0 .5em 0;
+    line-height:1.3;
+  }
+  .container{
+    max-width:var(--maxw);
+    margin:0 auto;
+    padding:0 32px;
+  }
+
+  /* top bar */
+  .topbar{
+    background:var(--paper);
+    border-bottom:1px solid var(--gray-200);
+    position:sticky;
+    top:0;
+    z-index:10;
+  }
+  .topbar-inner{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:20px 32px;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  .logo{
+    font-family:'Cormorant Garamond',Georgia,serif;
+    font-weight:600;
+    letter-spacing:.04em;
+    font-size:21px;
+  }
+  .toplinks a{
+    color:var(--gray-700);
+    text-decoration:none;
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    margin-left:28px;
+  }
+  .toplinks a:hover{ color:var(--accent); }
+
+  /* page canvas */
+  .page{
+    padding:40px 0 60px;
+  }
+
+  /* card sections */
+  .card{
+    background:var(--paper);
+    border-radius:10px;
+    box-shadow:0 2px 6px rgba(20,18,16,.06), 0 10px 30px rgba(20,18,16,.06);
+    padding:56px 64px;
+    margin-bottom:28px;
+    scroll-margin-top:90px;
+  }
+  .card.hero{ padding:64px 64px 56px; }
+
+  /* stat strip — sits directly on the page canvas, not a white card */
+  .stat-strip{
+    padding:16px 32px;
+    margin:0 0 28px 0;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:14px 0;
+    scroll-margin-top:90px;
+  }
+  .stat-strip .stat{
+    padding:0 28px;
+    font-size:12.5px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--gray-700);
+    font-weight:700;
+    border-right:1px solid var(--gray-400);
+  }
+  .stat-strip .stat:last-child{ border-right:none; }
+  .stat-strip .stat span{
+    color:var(--accent);
+  }
+  @media (max-width:640px){
+    .stat-strip .stat{ border-right:none; padding:0 16px; }
+  }
+
+  .eyebrow{
+    text-transform:uppercase;
+    letter-spacing:.14em;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--accent);
+    margin:0 0 14px 0;
+  }
+  .hero h1{
+    font-size:clamp(32px,4.4vw,50px);
+    max-width:780px;
+    font-weight:600;
+  }
+  .hero .byline{
+    font-family:'Cormorant Garamond',Georgia,serif;
+    color:var(--gray-700);
+    font-size:18px;
+    font-weight:600;
+    margin:0 0 18px 0;
+  }
+  .hero .sub{
+    font-family:'Cormorant Garamond',Georgia,serif;
+    font-weight:500;
+    color:var(--gray-700);
+    max-width:660px;
+    font-size:21px;
+    line-height:1.5;
+    margin:0;
+  }
+
+  .card h2{
+    font-size:30px;
+  }
+  .card h3{
+    font-family:'Cormorant Garamond',Georgia,serif;
+    font-weight:600;
+    font-size:23px;
+    letter-spacing:.01em;
+    color:var(--ink);
+    margin-top:44px;
+    padding-top:22px;
+    border-top:1px solid var(--gray-200);
+  }
+  .card h3:first-of-type{
+    margin-top:32px;
+    padding-top:0;
+    border-top:none;
+  }
+
+  .equation{
+    text-align:center;
+    font-family:'Cormorant Garamond',Georgia,serif;
+    font-size:23px;
+    color:var(--ink);
+    margin:24px 0 28px;
+  }
+
+  /* placeholder / TODO blocks */
+  .todo{
+    position:relative;
+    background:var(--accent-soft);
+    border:1px dashed var(--accent);
+    border-radius:6px;
+    padding:16px 18px;
+    margin:22px 0 22px 0;
+    color:#7a3a29;
+    font-size:14.5px;
+    font-style:italic;
+  }
+  .todo::before{
+    content:"TO FILL IN";
+    position:absolute;
+    top:-10px;
+    left:14px;
+    background:var(--accent);
+    color:#fff;
+    font-style:normal;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:.08em;
+    padding:2px 8px;
+    border-radius:4px;
+  }
+
+  /* code snippets */
+  pre.code{
+    background:var(--page-bg);
+    border:1px solid var(--gray-200);
+    border-radius:8px;
+    padding:18px 20px;
+    margin:14px 0 22px 0;
+    overflow-x:auto;
+    font-family:Consolas,"SFMono-Regular",Menlo,monospace;
+    font-size:13.5px;
+    line-height:1.6;
+    color:var(--ink);
+  }
+
+  /* tables */
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin:18px 0 8px 0;
+    font-size:14.5px;
+  }
+  thead th{
+    text-align:left;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    font-size:11.5px;
+    color:var(--gray-700);
+    font-weight:700;
+    padding:10px 12px;
+    border-bottom:2px solid var(--gray-200);
+  }
+  tbody td{
+    padding:11px 12px;
+    border-bottom:1px solid var(--gray-200);
+  }
+  tbody tr:hover{ background:var(--page-bg); }
+  td.mono, th.mono{ font-variant-numeric:tabular-nums; }
+
+  /* image gallery */
+  .gallery{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:28px;
+    margin:26px 0 8px 0;
+  }
+  .gallery figure{
+    margin:0;
+    background:var(--page-bg);
+    border-radius:8px;
+    overflow:hidden;
+    box-shadow:0 1px 3px rgba(20,18,16,.08);
+  }
+  .gallery img{
+    display:block;
+    width:100%;
+    height:auto;
+  }
+  .gallery figcaption{
+    padding:12px 14px 14px;
+    font-size:13.5px;
+    color:var(--gray-700);
+  }
+  .gallery figcaption .fname{
+    display:block;
+    color:var(--ink);
+    font-weight:700;
+    margin-bottom:3px;
+    font-size:14px;
+  }
+
+  /* fixed-column galleries for side-by-side comparisons */
+  .gallery.cols-2{ grid-template-columns:repeat(2,1fr); }
+  .gallery.cols-3{ grid-template-columns:repeat(3,1fr); }
+  .gallery.cols-4{ grid-template-columns:repeat(4,1fr); gap:20px; }
+  .gallery.cols-5{ grid-template-columns:repeat(5,1fr); gap:16px; }
+  .gallery.cols-6{ grid-template-columns:repeat(6,1fr); gap:12px; }
+  .gallery.cols-5 figcaption,
+  .gallery.cols-6 figcaption{ padding:8px 10px 10px; font-size:12px; }
+  .gallery.cols-5 figcaption .fname,
+  .gallery.cols-6 figcaption .fname{ font-size:12.5px; margin-bottom:0; }
+  .gallery.narrow{ max-width:520px; }
+  /* tiny filter kernels: scale up without smoothing */
+  .gallery img.pixelated{ image-rendering:pixelated; }
+  .row-label{
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    font-size:11.5px;
+    font-weight:700;
+    color:var(--gray-700);
+    margin:26px 0 -14px 0;
+  }
+
+  footer{
+    background:var(--footer-bg);
+    color:var(--footer-text);
+    border-radius:10px;
+    padding:26px 64px;
+    font-size:13px;
+  }
+  footer .container{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; padding:0; max-width:none; }
+  footer .dim{ color:var(--footer-text-dim); }
+
+  @media (max-width:900px){
+    .gallery.cols-5, .gallery.cols-6{ grid-template-columns:repeat(3,1fr); }
+    .gallery.cols-4{ grid-template-columns:repeat(2,1fr); }
+  }
+  @media (max-width:640px){
+    body{ padding:16px 10px; }
+    .topbar-inner{ padding:16px 20px; }
+    .container{ padding:0 20px; }
+    .toplinks a{ margin-left:16px; }
+    .card, .card.hero{ padding:36px 24px; }
+    footer{ padding:22px 24px; }
+    .gallery.cols-2, .gallery.cols-3{ grid-template-columns:1fr; }
+    .gallery.cols-4, .gallery.cols-5, .gallery.cols-6{ grid-template-columns:repeat(2,1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="site-frame">
+
+<header class="topbar">
+  <div class="container topbar-inner">
+    <span class="logo">Filters &middot; Frequencies</span>
+    <nav class="toplinks">
+      <a href="#overview">Overview</a>
+      <a href="#part1">Part 1</a>
+      <a href="#part2">Part 2</a>
+      <a href="#takeaway">Takeaway</a>
+    </nav>
+  </div>
+</header>
+
+<div class="page">
+  <div class="container">
+
+    <!-- ============ OVERVIEW ============ -->
+    <section id="overview" class="card hero">
+      <p class="eyebrow">CS180 · Project 2</p>
+      <h1>Fun with Filters and Frequencies</h1>
+      <p class="byline">By Catherine Zhuang</p>
+      <p class="sub">Building intuition for 2D convolution and edge detection, then using frequency decompositions to sharpen, hybridize, and seamlessly blend images.</p>    </section>
+
+    <div class="stat-strip" id="part1">
+      <span class="stat"><span>Part 1</span> &nbsp;Filters and Edges</span>
+      <span class="stat">Convolution</span>
+      <span class="stat">Finite Differences</span>
+      <span class="stat">Derivative of Gaussian</span>
+    </div>
+
+    <!-- ============ PART 1.1 ============ -->
+    <section id="part1-1" class="card">
+      <p class="eyebrow">Part 1.1</p>
+      <h2>Convolutions from Scratch</h2>
+      <p>A 2D convolution implemented with numpy only: first with four nested loops, then with two, both using zero padding and a flipped kernel. The results are compared against <code>scipy.signal.convolve2d</code>.</p>
+      <h3>Four-Loop Implementation</h3>
+      <pre class="code">for y in range(h):
+    for x in range(w):
+        for ky in range(kh):
+            for kx in range(kw):
+                output[y, x] += (padded[y + ky, x + kx] * kernel[ky, kx])</pre>
+
+      <h3>Two-Loop Implementation</h3>
+      <pre class="code">for y in range(h):
+    for x in range(w):
+        window = padded[y:y + kh, x:x + kw]
+        output[y, x] = np.sum(window * kernel_flipped)</pre>
+
+      <h3>Comparison with SciPy</h3>
+      <table>
+        <thead>
+          <tr><th>Implementation</th><th class="mono">Runtime (seconds)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Four loops (numpy)</td><td class="mono">174.02</td></tr>
+          <tr><td>Two loops (numpy)</td><td class="mono">13.97</td></tr>
+          <tr><td>scipy.signal.convolve2d</td><td class="mono">0.51</td></tr>
+        </tbody>
+      </table>
+
+      <p>The two-loop implementation is faster than the four-loop implementation because it processes an entire image patch at once instead of multiplying each kernel element one by one. The <code>scipy.signal.convolve2d</code> implementation is the fastest because it uses cache. The outputs from my implementations match the SciPy result aside from possible very small floating-point differences. For boundary handling, both of my implementations use zero-padding so that the output has the same size as the input image.</p>
+
+      <h3>Results — Box Filter and Finite Differences</h3>
+      <p>A grayscale photo of myself convolved with a 9&times;9 box filter and with the finite difference operators D<sub>x</sub> and D<sub>y</sub>.</p>
+
+      <div class="gallery cols-3">
+        <figure>
+          <img loading="lazy" src="inputs/part1_1_selfie.jpg" alt="Original input photo">
+          <figcaption><span class="fname">Original</span>Input photo</figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part1_1_original.jpg" alt="Input photo read as grayscale">
+          <figcaption><span class="fname">Grayscale</span>Input read as grayscale</figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part1_1_blurred.jpg" alt="Box filter result from the four-loop convolution">
+          <figcaption><span class="fname">9&times;9 Box Filter</span>Four-loop convolution</figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part1_1_two_loops_blurred.jpg" alt="Box filter result from the two-loop convolution">
+          <figcaption><span class="fname">9&times;9 Box Filter</span>Two-loop convolution</figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part1_1_dx.jpg" alt="Photo convolved with Dx">
+          <figcaption><span class="fname">D<sub>x</sub></span>Finite difference in x</figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part1_1_dy.jpg" alt="Photo convolved with Dy">
+          <figcaption><span class="fname">D<sub>y</sub></span>Finite difference in y</figcaption>
+        </figure>
+      </div>
+
+      <p>Here, we can see that the four-loop and two-loop implementations produce the same blurred result. The D<sub>x</sub> filter highlights intensity changes in the x-direction, which emphasizes vertical edges. The D<sub>y</sub> filter highlights intensity changes in the y-direction, so it emphasizes horizontal edges.</p>
+    </section>
+
+    <!-- ============ PART 1.2 ============ -->
+    <section id="part1-2" class="card">
+      <p class="eyebrow">Part 1.2</p>
+      <h2>Finite Difference Operator</h2>
+      <p>The cameraman image is convolved with D<sub>x</sub> and D<sub>y</sub> to get its partial derivatives, which are combined into the gradient magnitude</p>
+
+      <div class="equation">
+        &Vert;&nabla;<i>I</i>&Vert; = &radic;<span style="border-top:1.5px solid var(--ink);padding:1px 5px 3px;">(&part;<i>I</i>/&part;x)<sup>2</sup> + (&part;<i>I</i>/&part;y)<sup>2</sup></span>
+      </div>
+
+      <p>and then binarized with a threshold to produce an edge image.</p>
+      <h3>Partial Derivatives and Gradient Magnitude</h3>
+      <div class="gallery cols-4">
+        <figure>
+          <img loading="lazy" src="inputs/cameraman.png" alt="Original cameraman image">
+          <figcaption><span class="fname">Original</span>cameraman.png</figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part1_2_dx.jpg" alt="Cameraman partial derivative in x">
+          <figcaption><span class="fname">Partial Derivative in x</span>Image * D<sub>x</sub></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part1_2_dy.jpg" alt="Cameraman partial derivative in y">
+          <figcaption><span class="fname">Partial Derivative in y</span>Image * D<sub>y</sub></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part1_2_gradient_magnitude.jpg" alt="Cameraman gradient magnitude">
+          <figcaption><span class="fname">Gradient Magnitude</span>Before thresholding</figcaption>
+        </figure>
+      </div>
+
+      <h3>Choosing the Threshold</h3>
+      <p>I tried several thresholds and chose <b>0.1</b> for the final edge image.</p>
+
+      <div class="gallery cols-4">
+        <figure>
+          <img loading="lazy" src="outputs/part1_2_edges_0_05.jpg" alt="Edge image at threshold 0.05">
+          <figcaption><span class="fname">Threshold 0.05</span></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part1_2_edges_0_1.jpg" alt="Edge image at threshold 0.1">
+          <figcaption><span class="fname">Threshold 0.10</span>Chosen</figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part1_2_edges_0_15.jpg" alt="Edge image at threshold 0.15">
+          <figcaption><span class="fname">Threshold 0.15</span></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part1_2_edges_0_18.jpg" alt="Edge image at threshold 0.18">
+          <figcaption><span class="fname">Threshold 0.18</span></figcaption>
+        </figure>
+      </div>
+
+      <p>I chose a threshold of 0.1 because it preserves more of the real edges in the background buildings while removing many of the noisy edges caused by the grass. Lower thresholds keep more weak edges but also introduce more noise, while higher thresholds suppress more noise but can remove some real edges.</p>
+    </section>
+
+    <!-- ============ PART 1.3 ============ -->
+    <section id="part1-3" class="card">
+      <p class="eyebrow">Part 1.3</p>
+      <h2>Derivative of Gaussian (DoG) Filter</h2>
+      <p>The finite difference results are noisy, so the image is first smoothed with a Gaussian filter built from <code>cv2.getGaussianKernel</code> and its outer product. The same edge pipeline is then repeated, first as two convolutions (blur, then differentiate) and then as a single convolution with derivative of Gaussian filters.</p>
+      <h3>Gaussian Smoothing, then Finite Differences</h3>
+      <div class="gallery cols-4">
+        <figure>
+          <img loading="lazy" src="outputs/part1_3_dx.jpg" alt="Blurred cameraman partial derivative in x">
+          <figcaption><span class="fname">Partial Derivative in x</span>Blurred image * D<sub>x</sub></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part1_3_dy.jpg" alt="Blurred cameraman partial derivative in y">
+          <figcaption><span class="fname">Partial Derivative in y</span>Blurred image * D<sub>y</sub></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part1_3_gradient_magnitude.jpg" alt="Gradient magnitude of the blurred cameraman">
+          <figcaption><span class="fname">Gradient Magnitude</span></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part1_3_edges_0_10.jpg" alt="Edge image of the blurred cameraman at threshold 0.10">
+          <figcaption><span class="fname">Edges</span>Threshold 0.10</figcaption>
+        </figure>
+      </div>
+
+      <p>Compared with the finite difference results in Part 1.2, the Gaussian-smoothed result preserves the important background edges while reducing many of the noisy edges caused by the grass.</p>
+
+      <h3>Derivative of Gaussian Filters</h3>
+      <p>Convolving the Gaussian with D<sub>x</sub> and D<sub>y</sub> gives two DoG filters, shown here as images.</p>
+
+      <div class="gallery cols-2 narrow">
+        <figure>
+          <img class="pixelated" src="outputs/part1_3_dog_x.jpg" alt="DoG filter in x">
+          <figcaption><span class="fname">DoG<sub>x</sub></span>G * D<sub>x</sub></figcaption>
+        </figure>
+        <figure>
+          <img class="pixelated" src="outputs/part1_3_dog_y.jpg" alt="DoG filter in y">
+          <figcaption><span class="fname">DoG<sub>y</sub></span>G * D<sub>y</sub></figcaption>
+        </figure>
+      </div>
+
+      <h3>Single Convolution with DoG Filters</h3>
+      <div class="gallery cols-2">
+        <figure>
+          <img loading="lazy" src="outputs/part1_3_dog_gradient_magnitude.jpg" alt="Gradient magnitude from DoG filters">
+          <figcaption><span class="fname">Gradient Magnitude</span>Image convolved directly with the DoG filters</figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part1_3_edges_dog_0_10.jpg" alt="Edge image from DoG filters at threshold 0.10">
+          <figcaption><span class="fname">Edges</span>Threshold 0.10</figcaption>
+        </figure>
+      </div>
+
+      <p>We can see that the single-convolution DoG result matches the two-step result. This is because convolution is associative, so convolving the image with the Gaussian and then the derivative filter is mathematically equivalent to first convolving the Gaussian with the derivative filter and then applying the resulting DoG filter to the image.</p>
+    </section>
+
+    <div class="stat-strip" id="part2">
+      <span class="stat"><span>Part 2</span> &nbsp;Applications</span>
+      <span class="stat">Sharpening</span>
+      <span class="stat">Hybrid Images</span>
+      <span class="stat">Stacks</span>
+      <span class="stat">Blending</span>
+    </div>
+
+    <!-- ============ PART 2.1 ============ -->
+    <section id="part2-1" class="card">
+      <p class="eyebrow">Part 2.1</p>
+      <h2>Image "Sharpening"</h2>
+      <p>A Gaussian filter keeps only the low frequencies of an image, so subtracting the blurred image from the original leaves the high frequencies. Adding a scaled copy of those high frequencies back makes the image look sharper.</p>
+
+      <h3>Taj Mahal</h3>
+      <div class="gallery cols-6">
+        <figure>
+          <img loading="lazy" src="inputs/taj.jpg" alt="Original Taj Mahal image">
+          <figcaption><span class="fname">Original</span></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_1_taj_blurred.jpg" alt="Blurred Taj Mahal">
+          <figcaption><span class="fname">Blurred</span></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_1_taj_high_frequency.jpg" alt="High frequencies of the Taj Mahal">
+          <figcaption><span class="fname">High Frequency</span></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_1_taj_sharpened_alpha_1.jpg" alt="Taj Mahal sharpened with alpha 1">
+          <figcaption><span class="fname">Sharpened, &alpha; = 1</span></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_1_taj_sharpened_alpha_2.jpg" alt="Taj Mahal sharpened with alpha 2">
+          <figcaption><span class="fname">Sharpened, &alpha; = 2</span></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_1_taj_sharpened_alpha_3.jpg" alt="Taj Mahal sharpened with alpha 3">
+          <figcaption><span class="fname">Sharpened, &alpha; = 3</span></figcaption>
+        </figure>
+      </div>
+
+      <p>As &alpha; increases, the image becomes progressively sharper because the high-frequency details are amplified more strongly. However, very large values of &alpha; can also make edges look overly strong or unnatural.</p>
+
+      <h3>My Own Image</h3>
+      <div class="gallery cols-3">
+        <figure>
+          <img loading="lazy" src="inputs/part2_1_view.jpg" alt="Original view image">
+          <figcaption><span class="fname">Original</span></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_1_view_blurred.jpg" alt="Blurred view">
+          <figcaption><span class="fname">Blurred</span></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_1_view_high_frequency.jpg" alt="High frequencies of the view">
+          <figcaption><span class="fname">High Frequency</span></figcaption>
+        </figure>
+      </div>
+      <div class="gallery cols-3">
+        <figure>
+          <img loading="lazy" src="outputs/part2_1_view_sharpened_alpha_1.jpg" alt="View sharpened with alpha 1">
+          <figcaption><span class="fname">Sharpened, &alpha; = 1</span></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_1_view_sharpened_alpha_2.jpg" alt="View sharpened with alpha 2">
+          <figcaption><span class="fname">Sharpened, &alpha; = 2</span></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_1_view_sharpened_alpha_3.jpg" alt="View sharpened with alpha 3">
+          <figcaption><span class="fname">Sharpened, &alpha; = 3</span></figcaption>
+        </figure>
+      </div>
+      <h3>Blur, then Re-Sharpen</h3>
+      <p>For evaluation, a sharp image is blurred and then sharpened again to see how much of the original detail comes back.</p>
+
+      <div class="gallery cols-2">
+        <figure>
+          <img loading="lazy" src="inputs/part2_1_sharp_image.jpg" alt="Original sharp image">
+          <figcaption><span class="fname">Original</span>Sharp input image</figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_1_resharpen_blurred.jpg" alt="Sharp image after blurring">
+          <figcaption><span class="fname">Blurred</span>Sharp original after Gaussian blur</figcaption>
+        </figure>
+      </div>
+      <div class="gallery cols-3">
+        <figure>
+          <img loading="lazy" src="outputs/part2_1_resharpen_alpha_1.jpg" alt="Blurred image re-sharpened with alpha 1">
+          <figcaption><span class="fname">Re-Sharpened, &alpha; = 1</span></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_1_resharpen_alpha_2.jpg" alt="Blurred image re-sharpened with alpha 2">
+          <figcaption><span class="fname">Re-Sharpened, &alpha; = 2</span></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_1_resharpen_alpha_3.jpg" alt="Blurred image re-sharpened with alpha 3">
+          <figcaption><span class="fname">Re-Sharpened, &alpha; = 3</span></figcaption>
+        </figure>
+      </div>
+
+      <p>We can observe that sharpening cannot completely recover the original sharp image because some information is permanently lost during the blurring process. Increasing &alpha; can make the blurred image appear sharper, but it cannot fully reconstruct the fine details that were removed.</p>
+    </section>
+
+    <!-- ============ PART 2.2 ============ -->
+    <section id="part2-2" class="card">
+      <p class="eyebrow">Part 2.2</p>
+      <h2>Hybrid Images</h2>
+      <p>A hybrid image combines the low frequencies of one image with the high frequencies of another, following Oliva, Torralba, and Schyns (SIGGRAPH 2006). Up close the high-frequency image dominates; from far away only the low-frequency image is visible.</p>
+      <h3>Derek + Nutmeg — Full Process</h3>
+      <p class="row-label">Original inputs</p>
+      <div class="gallery cols-2">
+        <figure>
+          <img loading="lazy" src="inputs/DerekPicture.jpg" alt="Original Derek image">
+          <figcaption><span class="fname">Derek</span>Original</figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="inputs/nutmeg.jpg" alt="Original Nutmeg image">
+          <figcaption><span class="fname">Nutmeg</span>Original</figcaption>
+        </figure>
+      </div>
+
+      <p class="row-label">Aligned inputs</p>
+      <div class="gallery cols-2">
+        <figure>
+          <img loading="lazy" src="outputs/part2_2_derek_aligned.jpg" alt="Derek, aligned">
+          <figcaption><span class="fname">Derek</span>Aligned</figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_2_nutmeg_aligned.jpg" alt="Nutmeg, aligned">
+          <figcaption><span class="fname">Nutmeg</span>Aligned</figcaption>
+        </figure>
+      </div>
+
+      <p class="row-label">Filtered results and hybrid</p>
+      <div class="gallery cols-3">
+        <figure>
+          <img loading="lazy" src="outputs/part2_2_low_frequency.jpg" alt="Low-pass filtered Derek">
+          <figcaption><span class="fname">Low Frequencies</span>Derek, low-pass filtered</figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_2_high_frequency.jpg" alt="High-pass filtered Nutmeg">
+          <figcaption><span class="fname">High Frequencies</span>Nutmeg, high-pass filtered</figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_2_hybrid.jpg" alt="Derek and Nutmeg hybrid image">
+          <figcaption><span class="fname">Hybrid</span>Final result</figcaption>
+        </figure>
+      </div>
+
+      <p>I chose &sigma;<sub>high</sub> = 3 and &sigma;<sub>low</sub> = 5 after experimenting with different values. With these settings, the high-frequency details and low-frequency structure are both clearly visible, producing the clearest hybrid effect.</p>
+
+      <p class="row-label">Log magnitude of the Fourier transform</p>
+      <div class="gallery cols-5">
+        <figure>
+          <img loading="lazy" src="outputs/part2_2_fft_derek.jpg" alt="Fourier transform of Derek">
+          <figcaption><span class="fname">Derek</span></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_2_fft_nutmeg.jpg" alt="Fourier transform of Nutmeg">
+          <figcaption><span class="fname">Nutmeg</span></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_2_fft_low.jpg" alt="Fourier transform of the low-pass image">
+          <figcaption><span class="fname">Low-Pass</span></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_2_fft_high.jpg" alt="Fourier transform of the high-pass image">
+          <figcaption><span class="fname">High-Pass</span></figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_2_fft_hybrid.jpg" alt="Fourier transform of the hybrid image">
+          <figcaption><span class="fname">Hybrid</span></figcaption>
+        </figure>
+      </div>
+      <h3>Cat + Owl</h3>
+      <div class="gallery cols-3">
+        <figure>
+          <img loading="lazy" src="inputs/part2_2_cat.webp" alt="Original cat image">
+          <figcaption><span class="fname">Cat</span>Original</figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="inputs/part2_2_owl.webp" alt="Original owl image">
+          <figcaption><span class="fname">Owl</span>Original</figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_2_cat_owl_hybrid.jpg" alt="Cat and owl hybrid image">
+          <figcaption><span class="fname">Hybrid</span>Cat + Owl</figcaption>
+        </figure>
+      </div>
+      <h3>Berkeley + Stanford</h3>
+      <div class="gallery cols-3">
+        <figure>
+          <img loading="lazy" src="inputs/part2_2_berkeley.webp" alt="Original Berkeley seal">
+          <figcaption><span class="fname">Berkeley</span>Original</figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="inputs/part2_2_stanford.png" alt="Original Stanford logo">
+          <figcaption><span class="fname">Stanford</span>Original</figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="outputs/part2_2_berkeley_stadnford_hybrid.jpg" alt="Berkeley and Stanford hybrid image">
+          <figcaption><span class="fname">Hybrid</span>Berkeley + Stanford</figcaption>
+        </figure>
+      </div>    </section>
+
+    <!-- ============ PART 2.3 ============ -->
+    <section id="part2-3" class="card">
+      <p class="eyebrow">Part 2.3</p>
+      <h2>Gaussian and Laplacian Stacks</h2>
+      <p>A stack is like a pyramid without the downsampling: every level keeps the original image size. Each level of the Gaussian stack is a further-blurred copy of the previous one, and each level of the Laplacian stack is the difference between two consecutive Gaussian levels, with the last level holding the remaining low frequencies.</p>
+
+      <p>I used 5 levels with an initial &sigma; = 1. I doubled &sigma; at each level to create progressively stronger blur, giving &sigma; = 1, 2, 4, 8, and 16. The Gaussian kernel size was chosen as 6&sigma; + 1, resulting in kernel sizes of 7&times;7, 13&times;13, 25&times;25, 49&times;49, and 97&times;97.</p>
+
+      <h3>Input Images</h3>
+      <div class="gallery cols-2 narrow">
+        <figure>
+          <img loading="lazy" src="inputs/apple.jpeg" alt="Original apple image">
+          <figcaption><span class="fname">Apple</span>Original</figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="inputs/orange.jpeg" alt="Original orange image">
+          <figcaption><span class="fname">Orange</span>Original</figcaption>
+        </figure>
+      </div>
+
+      <h3>Apple</h3>
+      <p class="row-label">Gaussian stack</p>
+      <div class="gallery cols-6">
+        <figure><img loading="lazy" src="outputs/part2_3_apple_gaussian_0.jpg" alt="Apple Gaussian stack level 0"><figcaption><span class="fname">Level 0</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_apple_gaussian_1.jpg" alt="Apple Gaussian stack level 1"><figcaption><span class="fname">Level 1</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_apple_gaussian_2.jpg" alt="Apple Gaussian stack level 2"><figcaption><span class="fname">Level 2</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_apple_gaussian_3.jpg" alt="Apple Gaussian stack level 3"><figcaption><span class="fname">Level 3</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_apple_gaussian_4.jpg" alt="Apple Gaussian stack level 4"><figcaption><span class="fname">Level 4</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_apple_gaussian_5.jpg" alt="Apple Gaussian stack level 5"><figcaption><span class="fname">Level 5</span></figcaption></figure>
+      </div>
+      <p class="row-label">Laplacian stack</p>
+      <div class="gallery cols-6">
+        <figure><img loading="lazy" src="outputs/part2_3_apple_laplacian_0.jpg" alt="Apple Laplacian stack level 0"><figcaption><span class="fname">Level 0</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_apple_laplacian_1.jpg" alt="Apple Laplacian stack level 1"><figcaption><span class="fname">Level 1</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_apple_laplacian_2.jpg" alt="Apple Laplacian stack level 2"><figcaption><span class="fname">Level 2</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_apple_laplacian_3.jpg" alt="Apple Laplacian stack level 3"><figcaption><span class="fname">Level 3</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_apple_laplacian_4.jpg" alt="Apple Laplacian stack level 4"><figcaption><span class="fname">Level 4</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_apple_laplacian_5.jpg" alt="Apple Laplacian stack level 5"><figcaption><span class="fname">Level 5</span></figcaption></figure>
+      </div>
+
+      <h3>Orange</h3>
+      <p class="row-label">Gaussian stack</p>
+      <div class="gallery cols-6">
+        <figure><img loading="lazy" src="outputs/part2_3_orange_gaussian_0.jpg" alt="Orange Gaussian stack level 0"><figcaption><span class="fname">Level 0</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_orange_gaussian_1.jpg" alt="Orange Gaussian stack level 1"><figcaption><span class="fname">Level 1</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_orange_gaussian_2.jpg" alt="Orange Gaussian stack level 2"><figcaption><span class="fname">Level 2</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_orange_gaussian_3.jpg" alt="Orange Gaussian stack level 3"><figcaption><span class="fname">Level 3</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_orange_gaussian_4.jpg" alt="Orange Gaussian stack level 4"><figcaption><span class="fname">Level 4</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_orange_gaussian_5.jpg" alt="Orange Gaussian stack level 5"><figcaption><span class="fname">Level 5</span></figcaption></figure>
+      </div>
+      <p class="row-label">Laplacian stack</p>
+      <div class="gallery cols-6">
+        <figure><img loading="lazy" src="outputs/part2_3_orange_laplacian_0.jpg" alt="Orange Laplacian stack level 0"><figcaption><span class="fname">Level 0</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_orange_laplacian_1.jpg" alt="Orange Laplacian stack level 1"><figcaption><span class="fname">Level 1</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_orange_laplacian_2.jpg" alt="Orange Laplacian stack level 2"><figcaption><span class="fname">Level 2</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_orange_laplacian_3.jpg" alt="Orange Laplacian stack level 3"><figcaption><span class="fname">Level 3</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_orange_laplacian_4.jpg" alt="Orange Laplacian stack level 4"><figcaption><span class="fname">Level 4</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_orange_laplacian_5.jpg" alt="Orange Laplacian stack level 5"><figcaption><span class="fname">Level 5</span></figcaption></figure>
+      </div>
+
+      <h3>Recreating Figure 3.42</h3>
+      <p>Each row shows the masked apple, the masked orange, and their sum. The first three rows are Laplacian stack levels 0, 2, and 4; the last row sums all levels to give the final images.</p>
+
+      <p class="row-label">Level 0 — high frequencies</p>
+      <div class="gallery cols-3">
+        <figure><img loading="lazy" src="outputs/part2_3_figure_apple_0.jpg" alt="Masked apple, level 0"><figcaption><span class="fname">(a) Apple</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_figure_orange_0.jpg" alt="Masked orange, level 0"><figcaption><span class="fname">(b) Orange</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_figure_combined_0.jpg" alt="Combined, level 0"><figcaption><span class="fname">(c) Combined</span></figcaption></figure>
+      </div>
+      <p class="row-label">Level 2 — medium frequencies</p>
+      <div class="gallery cols-3">
+        <figure><img loading="lazy" src="outputs/part2_3_figure_apple_2.jpg" alt="Masked apple, level 2"><figcaption><span class="fname">(d) Apple</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_figure_orange_2.jpg" alt="Masked orange, level 2"><figcaption><span class="fname">(e) Orange</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_figure_combined_2.jpg" alt="Combined, level 2"><figcaption><span class="fname">(f) Combined</span></figcaption></figure>
+      </div>
+      <p class="row-label">Level 4 — low frequencies</p>
+      <div class="gallery cols-3">
+        <figure><img loading="lazy" src="outputs/part2_3_figure_apple_4.jpg" alt="Masked apple, level 4"><figcaption><span class="fname">(g) Apple</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_figure_orange_4.jpg" alt="Masked orange, level 4"><figcaption><span class="fname">(h) Orange</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_figure_combined_4.jpg" alt="Combined, level 4"><figcaption><span class="fname">(i) Combined</span></figcaption></figure>
+      </div>
+      <p class="row-label">All levels summed</p>
+      <div class="gallery cols-3">
+        <figure><img loading="lazy" src="outputs/part2_3_figure_apple_all.jpg" alt="Masked apple, all levels"><figcaption><span class="fname">(j) Apple</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_figure_orange_all.jpg" alt="Masked orange, all levels"><figcaption><span class="fname">(k) Orange</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_3_figure_combined_all.jpg" alt="The oraple"><figcaption><span class="fname">(l) Oraple</span></figcaption></figure>
+      </div>    </section>
+
+    <!-- ============ PART 2.4 ============ -->
+    <section id="part2-4" class="card">
+      <p class="eyebrow">Part 2.4</p>
+      <h2>Multiresolution Blending</h2>
+      <p>Following Burt and Adelson (1983), two images are blended by combining their Laplacian stacks level by level, weighted by a Gaussian stack of the mask, and then summing the levels. Because the mask is blurrier at coarser levels, low frequencies transition gradually while fine details keep a tight seam.</p>
+      <h3>The Oraple</h3>
+      <div class="gallery cols-2 narrow">
+        <figure>
+          <img loading="lazy" src="outputs/part2_3_figure_combined_all.jpg" alt="The oraple: apple and orange blended along a vertical seam">
+          <figcaption><span class="fname">Oraple</span>Vertical seam</figcaption>
+        </figure>
+      </div>
+
+      <h3>Ocean: Day + Night — Full Process</h3>
+      <p class="row-label">Original inputs</p>
+      <div class="gallery cols-2">
+        <figure>
+          <img loading="lazy" src="inputs/part2_4_oceanday.jpg" alt="Original daytime ocean image">
+          <figcaption><span class="fname">Day</span>Original</figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="inputs/part2_4_oceannight.jpg" alt="Original nighttime ocean image">
+          <figcaption><span class="fname">Night</span>Original</figcaption>
+        </figure>
+      </div>
+
+      <p class="row-label">Mask</p>
+      <div class="gallery cols-4">
+        <figure><img loading="lazy" src="outputs/part2_4_ocean_mask.jpg" alt="Ocean blend mask"><figcaption><span class="fname">Mask</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_4_ocean_mask_level_0.jpg" alt="Ocean mask stack level 0"><figcaption><span class="fname">Mask, Level 0</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_4_ocean_mask_level_2.jpg" alt="Ocean mask stack level 2"><figcaption><span class="fname">Mask, Level 2</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_4_ocean_mask_level_4.jpg" alt="Ocean mask stack level 4"><figcaption><span class="fname">Mask, Level 4</span></figcaption></figure>
+      </div>
+
+      <p class="row-label">Level 0 — high frequencies</p>
+      <div class="gallery cols-3">
+        <figure><img loading="lazy" src="outputs/part2_4_ocean_day_level_0.jpg" alt="Masked day ocean, level 0"><figcaption><span class="fname">Day</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_4_ocean_night_level_0.jpg" alt="Masked night ocean, level 0"><figcaption><span class="fname">Night</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_4_ocean_combined_level_0.jpg" alt="Combined ocean, level 0"><figcaption><span class="fname">Combined</span></figcaption></figure>
+      </div>
+      <p class="row-label">Level 2 — medium frequencies</p>
+      <div class="gallery cols-3">
+        <figure><img loading="lazy" src="outputs/part2_4_ocean_day_level_2.jpg" alt="Masked day ocean, level 2"><figcaption><span class="fname">Day</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_4_ocean_night_level_2.jpg" alt="Masked night ocean, level 2"><figcaption><span class="fname">Night</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_4_ocean_combined_level_2.jpg" alt="Combined ocean, level 2"><figcaption><span class="fname">Combined</span></figcaption></figure>
+      </div>
+      <p class="row-label">Level 4 — low frequencies</p>
+      <div class="gallery cols-3">
+        <figure><img loading="lazy" src="outputs/part2_4_ocean_day_level_4.jpg" alt="Masked day ocean, level 4"><figcaption><span class="fname">Day</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_4_ocean_night_level_4.jpg" alt="Masked night ocean, level 4"><figcaption><span class="fname">Night</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_4_ocean_combined_level_4.jpg" alt="Combined ocean, level 4"><figcaption><span class="fname">Combined</span></figcaption></figure>
+      </div>
+      <p class="row-label">All levels summed</p>
+      <div class="gallery cols-3">
+        <figure><img loading="lazy" src="outputs/part2_4_ocean_day_contribution.jpg" alt="Day contribution to the blend"><figcaption><span class="fname">Day Contribution</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_4_ocean_night_contribution.jpg" alt="Night contribution to the blend"><figcaption><span class="fname">Night Contribution</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_4_ocean_blend.jpg" alt="Blended day and night ocean"><figcaption><span class="fname">Final Blend</span></figcaption></figure>
+      </div>
+      <h3>Forest: Spring + Fall — Irregular Mask</h3>
+      <p class="row-label">Original inputs</p>
+      <div class="gallery cols-2">
+        <figure>
+          <img loading="lazy" src="inputs/spring.jpg" alt="Original spring forest image">
+          <figcaption><span class="fname">Spring</span>Original</figcaption>
+        </figure>
+        <figure>
+          <img loading="lazy" src="inputs/fall.jpg" alt="Original fall forest image">
+          <figcaption><span class="fname">Fall</span>Original</figcaption>
+        </figure>
+      </div>
+
+      <p class="row-label">Mask and contributions</p>
+
+      <div class="gallery cols-3">
+        <figure><img loading="lazy" src="outputs/part2_4_forest_mask.jpg" alt="Irregular forest blend mask"><figcaption><span class="fname">Mask</span>Irregular seam</figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_4_forest_spring_contribution.jpg" alt="Spring contribution to the blend"><figcaption><span class="fname">Spring Contribution</span></figcaption></figure>
+        <figure><img loading="lazy" src="outputs/part2_4_forest_fall_contribution.jpg" alt="Fall contribution to the blend"><figcaption><span class="fname">Fall Contribution</span></figcaption></figure>
+      </div>
+      <div class="gallery">
+        <figure>
+          <img loading="lazy" src="outputs/part2_4_forest_blend.jpg" alt="Blended spring and fall forest">
+          <figcaption><span class="fname">Final Blend</span>Spring + Fall</figcaption>
+        </figure>
+      </div>
+
+      <p>I created the irregular mask by following the winding path of the road, so that one side of the road comes from the autumn image and the other side comes from the spring image.</p>
+    </section>
+
+    <!-- ============ TAKEAWAY ============ -->
+    <section id="takeaway" class="card">
+      <p class="eyebrow">Reflection</p>
+      <h2>The Most Important Thing I Learned</h2>
+      <p>The most important thing I learned from this project is that image blending is more difficult than it first appears. A good result depends on many factors, including image size, alignment, and the design of the mask. I especially found that creating a mask that follows a natural boundary in the image can make a large difference in how seamless the final blend looks.</p>
+    </section>
+
+    <footer>
+      <div class="container">
+        <span>CS180 &middot; Fall 2026 &middot; Project 2 — Fun with Filters and Frequencies</span>
+        <span class="dim">Catherine Zhuang</span>
+      </div>
+    </footer>
+
+  </div>
+</div>
+
+</div>
+
+</body>
+</html>
